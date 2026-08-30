@@ -13,9 +13,10 @@ app.get("/health", (_req, res) => {
 });
 
 app.post("/chat", async (req, res) => {
-  const { message, history } = req.body as {
+  const { message, history, deviceId } = req.body as {
     message: string;
     history?: ModelMessage[];
+    deviceId?: string;
   };
 
   if (typeof message !== "string" || message.trim() === "") {
@@ -27,7 +28,7 @@ app.post("/chat", async (req, res) => {
     { role: "user", content: message },
   ];
 
-  const rawReply = await runAgent(messages);
+  const rawReply = await runAgent(messages, deviceId ?? "anonymous");
   const reply = appendAllergenNotice(rawReply);
   res.json({ reply });
 });

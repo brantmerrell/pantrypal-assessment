@@ -104,6 +104,10 @@ TRADEOFFS.md        What shipped vs. what was scoped, and why
 
 See `SCOPING.md` for what's built and why, and `TRADEOFFS.md` for what got cut under the time box.
 
+## Architecture
+
+Full proposed system — what shipped in this window vs. what's deferred but planned — diagrammed at [diagrams.jbm.eco](https://diagrams.jbm.eco/tech/challenges/pressw/pantrypal_plan.d2?theme=light&layer=3_architecture).
+
 ---
 
 # Assessment instructions

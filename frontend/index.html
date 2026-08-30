@@ -26,9 +26,25 @@ const API_URL = ["localhost", "127.0.0.1"].includes(location.hostname)
   ? "http://localhost:8000/chat"
   : "https://pantrypal-api.jbm.eco/chat";
 const STORAGE_KEY = "pantrypal_history";
+const DEVICE_ID_KEY = "pantrypal_device_id";
 const log = document.getElementById("log");
 const form = document.getElementById("form");
 const input = document.getElementById("input");
+
+function loadDeviceId() {
+  try {
+    let id = localStorage.getItem(DEVICE_ID_KEY);
+    if (!id) {
+      id = crypto.randomUUID();
+      localStorage.setItem(DEVICE_ID_KEY, id);
+    }
+    return id;
+  } catch {
+    return "anonymous";
+  }
+}
+
+const deviceId = loadDeviceId();
 
 function loadHistory() {
   try {
@@ -72,7 +88,7 @@ form.addEventListener("submit", async (e) => {
     const res = await fetch(API_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message, history }),
+      body: JSON.stringify({ message, history, deviceId }),
     });
     const data = await res.json();
     addMessage("assistant", data.reply ?? "(no reply)");

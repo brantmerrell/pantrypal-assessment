@@ -1,6 +1,7 @@
 import { anthropic } from "@ai-sdk/anthropic";
 import { generateText, stepCountIs, type ModelMessage } from "ai";
 import { webSearch } from "./tools/search.js";
+import { buildPreferenceTools } from "./tools/preferences.js";
 
 const SYSTEM_PROMPT = `You are PantryPal, a cooking assistant.
 
@@ -8,14 +9,16 @@ Health and medical topics (non-negotiable, per legal): if a user mentions a medi
 
 Food safety (non-negotiable, per legal): never give a verdict on whether a specific food is safe to eat — no judgment calls on spoilage, "is this still good," or foodborne illness risk. Acknowledge the question and defer to official food safety guidance (e.g., USDA/FDA or the user's local health authority) instead of answering it yourself.
 
+Preferences: if the user states a durable, non-health preference (e.g., a favorite cuisine, a disliked ingredient, "vegetarian"), you may save it with savePreference for future conversations. You may check getPreferences if it seems useful, but you are not required to check it on every turn.
+
 Guardrails, personality, and the equipment-check tool are still to be filled in during the core agent build.`;
 
-export async function runAgent(messages: ModelMessage[]) {
+export async function runAgent(messages: ModelMessage[], deviceId: string) {
   const result = await generateText({
     model: anthropic("claude-sonnet-5"),
     system: SYSTEM_PROMPT,
     messages,
-    tools: { webSearch },
+    tools: { webSearch, ...buildPreferenceTools(deviceId) },
     stopWhen: stepCountIs(8),
   });
 
