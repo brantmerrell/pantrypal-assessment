@@ -1,6 +1,7 @@
 import cors from "cors";
 import express from "express";
 import { runAgent } from "./agent.js";
+import { appendAllergenNotice } from "./guardrails/allergen.js";
 import type { ModelMessage } from "ai";
 
 const app = express();
@@ -26,7 +27,8 @@ app.post("/chat", async (req, res) => {
     { role: "user", content: message },
   ];
 
-  const reply = await runAgent(messages);
+  const rawReply = await runAgent(messages);
+  const reply = appendAllergenNotice(rawReply);
   res.json({ reply });
 });
 
