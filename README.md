@@ -1,4 +1,82 @@
-# Applied AI Engineer: Take-Home Assessment
+# PantryPal
+
+A conversational cooking assistant. TypeScript backend on the Vercel AI SDK (Express), Anthropic as the LLM provider, Tavily for web search, model-driven tool use, Dockerized.
+
+## Setup
+
+```bash
+cp .env.example .env
+# fill in .env:
+#   ANTHROPIC_API_KEY=...
+#   TAVILY_API_KEY=...
+```
+
+## Run
+
+```bash
+docker compose up --build
+```
+
+- Backend: http://localhost:8000
+- Frontend: http://localhost:3000
+
+## Example requests
+
+```bash
+curl http://localhost:8000/health
+
+curl -X POST http://localhost:8000/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "What can I make with chicken thighs and rice?"}'
+```
+
+`POST /chat` accepts an optional `history` array of prior `{ role, content }` messages to continue a conversation:
+
+```bash
+curl -X POST http://localhost:8000/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "message": "What about something spicier?",
+    "history": [
+      {"role": "user", "content": "Suggest a quick dinner idea."},
+      {"role": "assistant", "content": "Try a stir-fry with whatever vegetables you have on hand."}
+    ]
+  }'
+```
+
+## Local development (without Docker)
+
+Requires Node 20.18.1+ (the AI SDK's dependencies require it; Docker already uses Node 22).
+
+```bash
+npm install
+npm run dev
+```
+
+## Project layout
+
+```
+src/
+  server.ts       Express app — /health and /chat
+  agent.ts         AI SDK tool-calling loop (generateText + stopWhen)
+  tools/search.ts  Tavily web search tool
+frontend/
+  index.html       Minimal chat UI, no build step
+Dockerfile, docker-compose.yml
+.env.example
+SCOPING.md         Scope, contradictions resolved, assumptions, risks
+TRADEOFFS.md        What shipped vs. what was scoped, and why
+```
+
+See `SCOPING.md` for what's built and why, and `TRADEOFFS.md` for what got cut under the time box.
+
+---
+
+# Assessment instructions
+
+*(as delivered, unedited)*
+
+## Applied AI Engineer: Take-Home Assessment
 
 **Role:** Applied AI Engineer (Full-Stack)
 **Time:** 3 hours, self-timeboxed
@@ -6,7 +84,7 @@
 
 ---
 
-## Before you start
+### Before you start
 
 Your 3-hour window starts when the assessment zip is delivered. The delivery system tracks the clock automatically, so there's no need to mark a start time yourself.
 
@@ -22,7 +100,7 @@ If something goes wrong (life, illness, internet), just tell us. Rescheduling is
 
 ---
 
-## What you're building
+### What you're building
 
 PantryPal is an early-stage B2C startup building an AI-powered cooking assistant. They've engaged us to build the first working version of their core product: a conversational assistant that helps users figure out what to cook.
 
@@ -37,11 +115,11 @@ Your first job is to read these carefully and decide what to build.
 
 ---
 
-## Deliverables
+### Deliverables
 
 You will submit four things:
 
-### 1. A scoping document (`SCOPING.md` in the repo root)
+#### 1. A scoping document (`SCOPING.md` in the repo root)
 
 Before writing code, produce a short scoping doc with the following sections:
 
@@ -54,7 +132,7 @@ Before writing code, produce a short scoping doc with the following sections:
 
 Keep this to 1-2 pages. We care about what's in each bucket. A scoping doc with three sharp, defensible entries per section beats one with fifteen generic ones.
 
-### 2. A working system
+#### 2. A working system
 
 Build against your own scope. Baseline requirements (non-negotiable):
 
@@ -67,11 +145,11 @@ Build against your own scope. Baseline requirements (non-negotiable):
 
 Everything else is up to you. Implement what your scope says you'll implement.
 
-### 3. A README
+#### 3. A README
 
 Setup instructions, example requests (curl is fine), and anything a teammate would need to run and understand the code.
 
-### 4. A trade-offs writeup (`TRADEOFFS.md` in the repo root)
+#### 4. A trade-offs writeup (`TRADEOFFS.md` in the repo root)
 
 Short doc covering:
 
@@ -82,7 +160,7 @@ Short doc covering:
 
 ---
 
-## Expectations and norms
+### Expectations and norms
 
 - **Use AI tools.** We do, and we expect you to. We're evaluating your judgment and your output.
 - **Don't optimize for feature count.** A smaller working system with defensible choices beats a larger system built on unexamined assumptions.
@@ -92,7 +170,7 @@ Short doc covering:
 
 ---
 
-## A note on the brief
+### A note on the brief
 
 The PantryPal artifacts are what you'd actually receive from a client at this stage: incomplete, sometimes contradictory, with real constraints buried in asides. Reading them carefully is part of the work. Do not assume every stated requirement belongs in your build, and do not assume every omission is unimportant.
 
