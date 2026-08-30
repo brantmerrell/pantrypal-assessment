@@ -74,6 +74,28 @@ docker compose logs backend --tail 40 | grep -A 20 "tool calls:"
 
 You should see a `checkEquipment` tool call with the `required`/`owned` items it extracted from your message.
 
+## Verifying the lane guardrail
+
+The product reading here is deliberately generous ("food-adjacent," per the CEO's brief) rather than strictly "recipes only" (the PM's summary) — see `SCOPING.md`'s Contradictions section for why. Wine pairings, kitchen gear, hosting advice, and restaurant opinions should all get a real, engaged answer:
+
+```bash
+curl -X POST http://localhost:8000/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "What wine pairs well with a mushroom risotto?"}'
+
+curl -X POST http://localhost:8000/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Is Olive Garden actually worth going to, or is it overrated?"}'
+```
+
+Something with no real connection to food should get a brief, one-line redirect back to cooking — not a lecture, and not multiple stacked refusals if you push on it:
+
+```bash
+curl -X POST http://localhost:8000/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Can you write me a cover letter for a marketing job?"}'
+```
+
 ## Local development (without Docker)
 
 Requires Node 20.18.1+ (the AI SDK's dependencies require it; Docker already uses Node 22).
