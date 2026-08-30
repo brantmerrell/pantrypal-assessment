@@ -53,6 +53,40 @@ npm install
 npm run dev
 ```
 
+## Deployment
+
+Live at [pantrypal.jbm.eco](https://pantrypal.jbm.eco).
+
+### Backend (Heroku, container stack)
+
+```bash
+# Create the app (first time only)
+heroku create pantrypal-api
+heroku stack:set container -a pantrypal-api
+
+# Configure environment variables
+heroku config:set ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY -a pantrypal-api
+heroku config:set TAVILY_API_KEY=$TAVILY_API_KEY -a pantrypal-api
+
+# Deploy (builds from the repo's Dockerfile per heroku.yml)
+git push heroku master
+
+# Custom domain + SSL
+heroku domains:add pantrypal-api.jbm.eco -a pantrypal-api
+heroku certs:auto:enable -a pantrypal-api
+```
+
+Update your DNS provider to point `pantrypal-api.jbm.eco` to the DNS target shown by `heroku domains -a pantrypal-api` (CNAME).
+
+### Frontend (GitHub Pages)
+
+The frontend has no build step, so the workflow just publishes `frontend/` as-is. It deploys automatically via GitHub Actions on push to `master`:
+1. Go to repository Settings → Pages → Source → **GitHub Actions**
+2. Set Custom domain to `pantrypal.jbm.eco`
+3. Update your DNS provider to point `pantrypal.jbm.eco` to GitHub Pages (CNAME to `brantmerrell.github.io`)
+
+The frontend's `API_URL` in `frontend/index.html` points at `http://localhost:8000/chat` when served from localhost, and `https://pantrypal-api.jbm.eco/chat` otherwise.
+
 ## Project layout
 
 ```
