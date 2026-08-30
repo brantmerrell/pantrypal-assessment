@@ -46,6 +46,34 @@ curl -X POST http://localhost:8000/chat \
   }'
 ```
 
+## Verifying the equipment check
+
+This only changes behavior when your message actually gives the model something to check against. An unconstrained ask ("what's a good dinner idea?") looks the same with or without it — there's nothing missing to flag, so that's expected, not a sign it's not working.
+
+To see it, state a real equipment gap and ask for something that would normally need the missing item — the model should substitute a workaround instead of just refusing:
+
+```bash
+curl -X POST http://localhost:8000/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "I only have a frying pan and a hot plate, no oven. Can you suggest a roasted chicken recipe?"}'
+```
+
+Expect a pan-roasted/skillet method offered in place of oven-roasting, not a flat "you can't make this." For contrast, the same kind of question with no equipment mentioned proceeds normally:
+
+```bash
+curl -X POST http://localhost:8000/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "What can I make with pasta and garlic?"}'
+```
+
+To confirm the model is actually calling the tool (not just reasoning about it in free text), set `DEBUG_TOOLS=1` in `.env` and check the backend logs after a request:
+
+```bash
+docker compose logs backend --tail 40 | grep -A 20 "tool calls:"
+```
+
+You should see a `checkEquipment` tool call with the `required`/`owned` items it extracted from your message.
+
 ## Local development (without Docker)
 
 Requires Node 20.18.1+ (the AI SDK's dependencies require it; Docker already uses Node 22).
