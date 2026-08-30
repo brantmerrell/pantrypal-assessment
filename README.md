@@ -2,6 +2,8 @@
 
 A conversational cooking assistant. TypeScript backend on the Vercel AI SDK (Express), Anthropic as the LLM provider, Tavily for web search, model-driven tool use, Dockerized.
 
+Live at [pantrypal.jbm.eco](https://pantrypal.jbm.eco).
+
 ## Setup
 
 ```bash
@@ -54,8 +56,6 @@ npm run dev
 ```
 
 ## Deployment
-
-Live at [pantrypal.jbm.eco](https://pantrypal.jbm.eco).
 
 ### Backend (Heroku, container stack)
 
