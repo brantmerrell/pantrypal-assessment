@@ -32,7 +32,10 @@ curl -X POST http://localhost:8000/chat \
   -d '{"message": "What can I make with chicken thighs and rice?"}'
 ```
 
-`POST /chat` accepts an optional `history` array of prior `{ role, content }` messages to continue a conversation:
+`POST /chat` accepts:
+- `message` (required)
+- `history` — an optional array of prior `{ role, content }` messages, to continue a conversation within the same session
+- `deviceId` — an optional string that keys durable preference storage across separate requests/sessions (the frontend generates and persists one per browser; curl calls default to `"anonymous"` if omitted)
 
 ```bash
 curl -X POST http://localhost:8000/chat \
@@ -44,6 +47,40 @@ curl -X POST http://localhost:8000/chat \
       {"role": "assistant", "content": "Try a stir-fry with whatever vegetables you have on hand."}
     ]
   }'
+```
+
+## Verifying preference persistence
+
+Preferences are stored in SQLite, keyed by `deviceId`, and survive a container restart (the DB file is volume-mounted at `./data/pantrypal.db`). This is proof that the persistence layer is real — the model isn't required to check stored preferences on every turn, so don't expect automatic recall without asking (see `SCOPING.md`/`TRADEOFFS.md`).
+
+Save a preference, then confirm it's recalled in a **separate request with no `history` sent** — that's what proves it's coming from the database, not from in-conversation context:
+
+```bash
+curl -X POST http://localhost:8000/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Please remember that I love Thai food.", "deviceId": "test-1"}'
+
+curl -X POST http://localhost:8000/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "What preferences do you have saved for me?", "deviceId": "test-1"}'
+```
+
+Health-related mentions are refused at the storage layer itself, not just by the model — this should never be saved, even though the model is also instructed not to try:
+
+```bash
+curl -X POST http://localhost:8000/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Please remember that I have diabetes.", "deviceId": "test-1"}'
+```
+
+To inspect the database directly:
+
+```bash
+docker compose exec backend node -e "
+const { DatabaseSync } = require('node:sqlite');
+const db = new DatabaseSync('/app/data/pantrypal.db');
+console.log(db.prepare('SELECT * FROM preferences').all());
+"
 ```
 
 ## Verifying the equipment check
@@ -141,9 +178,14 @@ The frontend's `API_URL` in `frontend/index.html` points at `http://localhost:80
 
 ```
 src/
-  server.ts       Express app — /health and /chat
-  agent.ts         AI SDK tool-calling loop (generateText + stopWhen)
-  tools/search.ts  Tavily web search tool
+  server.ts                Express app — /health and /chat
+  agent.ts                 AI SDK tool-calling loop (generateText + stopWhen), system prompt
+  db.ts                    SQLite (node:sqlite) preference store
+  tools/search.ts          Tavily web search tool
+  tools/equipment.ts       Equipment-check tool (required vs. owned)
+  tools/preferences.ts     savePreference / getPreferences tools
+  guardrails/allergen.ts   Deterministic allergen notice, appended to every reply
+  guardrails/health.ts     Deterministic keyword filter blocking health data from storage
 frontend/
   index.html       Minimal chat UI, no build step
 Dockerfile, docker-compose.yml
@@ -157,6 +199,21 @@ See `SCOPING.md` for what's built and why, and `TRADEOFFS.md` for what got cut u
 ## Architecture
 
 Full proposed system — what shipped in this window vs. what's deferred but planned — diagrammed at [diagrams.jbm.eco](https://diagrams.jbm.eco/tech/challenges/pressw/pantrypal_plan.d2?theme=light&layer=3_architecture).
+
+## Database schema
+
+SQLite (`node:sqlite`), a single table. `device_id` is a client-generated browser identifier, not a login/account (see Assumptions in `SCOPING.md`). Health-related preferences are never inserted here — `savePreference` filters them out before the write, per the retention constraint in `SCOPING.md`'s Contradictions section.
+
+```sql
+CREATE TABLE IF NOT EXISTS preferences (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  device_id TEXT NOT NULL,
+  preference TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+)
+```
+
+Source: `src/db.ts`, `src/tools/preferences.ts`.
 
 ---
 

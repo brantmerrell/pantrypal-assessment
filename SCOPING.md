@@ -2,6 +2,8 @@
 
 Architecture (what shipped vs. what's deferred but planned): [diagrams.jbm.eco](https://diagrams.jbm.eco/tech/challenges/pressw/pantrypal_plan.d2?theme=light&layer=3_architecture).
 
+![PantryPal architecture — committed vs. deferred](docs/architecture.svg)
+
 ## Scope committed
 
 - TypeScript backend on the Vercel AI SDK, Dockerized, with a simple chat frontend.
