@@ -3,10 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=20.18.1"
+  },
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
-    "start": "node dist/server.js"
+    "start": "node -e \"try{require('node:sqlite')}catch(e){console.error('\\nPantryPal needs Node 20.18.1+ for node:sqlite. Current: '+process.version+'.\\nFix: nvm use (reads the .nvmrc in this repo), or nvm use 22.\\n');process.exit(1)}\" && node dist/server.js"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "4.0.46",

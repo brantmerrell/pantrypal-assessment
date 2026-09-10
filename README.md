@@ -1,6 +1,6 @@
 # PantryPal
 
-A conversational cooking assistant. TypeScript backend on the Vercel AI SDK (Express), Anthropic as the LLM provider, Tavily for web search, model-driven tool use, Dockerized.
+A conversational cooking assistant. TypeScript backend on the Vercel AI SDK (Express), Anthropic as the LLM provider, Tavily for web search, model-driven tool use, Dockerized. React (Vite) frontend using the AI SDK's `useChat` hook for streaming.
 
 Live at [pantrypal.jbm.eco](https://pantrypal.jbm.eco).
 
@@ -20,9 +20,14 @@ docker compose up --build
 ```
 
 - Backend: http://localhost:8000
-- Frontend: http://localhost:3000
+- Frontend: http://localhost:3000 (streaming chat UI)
 
 ## Example requests
+
+The backend exposes two chat endpoints:
+
+- `POST /chat` — plain JSON in/out, easiest for curl. Used by the verification steps below.
+- `POST /chat/stream` — takes AI SDK `UIMessage[]`, streams a UI message stream back over SSE. This is what the React frontend's `useChat` hook talks to; see `frontend/src/App.tsx`.
 
 ```bash
 curl http://localhost:8000/health
@@ -135,12 +140,22 @@ curl -X POST http://localhost:8000/chat \
 
 ## Local development (without Docker)
 
-Requires Node 20.18.1+ (the AI SDK's dependencies require it; Docker already uses Node 22).
+**Backend** — requires Node 20.18.1+ (the AI SDK's dependencies require it; Docker already uses Node 22):
 
 ```bash
 npm install
 npm run dev
 ```
+
+**Frontend** — requires Node 22+ (Vite 8's toolchain needs it):
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Runs on http://localhost:3000, expects the backend at http://localhost:8000.
 
 ## Deployment
 
@@ -167,19 +182,19 @@ Update your DNS provider to point `pantrypal-api.jbm.eco` to the DNS target show
 
 ### Frontend (GitHub Pages)
 
-The frontend has no build step, so the workflow just publishes `frontend/` as-is. It deploys automatically via GitHub Actions on push to `master`:
+The workflow runs `npm ci && npm run build` in `frontend/` (Vite) and publishes `frontend/dist`. It deploys automatically via GitHub Actions on push to `master`:
 1. Go to repository Settings → Pages → Source → **GitHub Actions**
 2. Set Custom domain to `pantrypal.jbm.eco`
 3. Update your DNS provider to point `pantrypal.jbm.eco` to GitHub Pages (CNAME to `brantmerrell.github.io`)
 
-The frontend's `API_URL` in `frontend/index.html` points at `http://localhost:8000/chat` when served from localhost, and `https://pantrypal-api.jbm.eco/chat` otherwise.
+The frontend's `API_URL` in `frontend/src/App.tsx` points at `http://localhost:8000/chat/stream` when served from localhost, and `https://pantrypal-api.jbm.eco/chat/stream` otherwise.
 
 ## Project layout
 
 ```
 src/
-  server.ts                Express app — /health and /chat
-  agent.ts                 AI SDK tool-calling loop (generateText + stopWhen), system prompt
+  server.ts                Express app — /health, /chat, /chat/stream
+  agent.ts                 AI SDK tool-calling loop (generateText/streamText + stopWhen), system prompt
   db.ts                    SQLite (node:sqlite) preference store
   tools/search.ts          Tavily web search tool
   tools/equipment.ts       Equipment-check tool (required vs. owned)
@@ -187,7 +202,10 @@ src/
   guardrails/allergen.ts   Deterministic allergen notice, appended to every reply
   guardrails/health.ts     Deterministic keyword filter blocking health data from storage
 frontend/
-  index.html       Minimal chat UI, no build step
+  src/App.tsx      React chat UI — useChat (@ai-sdk/react) against /chat/stream, renders
+                   tool calls as inline status chips as they happen
+  src/index.css    Styling
+  (Vite build — npm install && npm run build)
 Dockerfile, docker-compose.yml
 .env.example
 SCOPING.md         Scope, contradictions resolved, assumptions, risks

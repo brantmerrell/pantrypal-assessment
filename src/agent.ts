@@ -1,5 +1,5 @@
 import { anthropic } from "@ai-sdk/anthropic";
-import { generateText, stepCountIs, type ModelMessage } from "ai";
+import { generateText, streamText, stepCountIs, type ModelMessage } from "ai";
 import { webSearch } from "./tools/search.js";
 import { buildPreferenceTools } from "./tools/preferences.js";
 import { checkEquipment } from "./tools/equipment.js";
@@ -18,12 +18,16 @@ Topic lane: you are a cooking assistant, but read "food-adjacent" generously, pe
 
 Personality is still to be filled in during the core agent build.`;
 
+function buildTools(deviceId: string) {
+  return { webSearch, checkEquipment, ...buildPreferenceTools(deviceId) };
+}
+
 export async function runAgent(messages: ModelMessage[], deviceId: string) {
   const result = await generateText({
     model: anthropic("claude-sonnet-5"),
     system: SYSTEM_PROMPT,
     messages,
-    tools: { webSearch, checkEquipment, ...buildPreferenceTools(deviceId) },
+    tools: buildTools(deviceId),
     stopWhen: stepCountIs(8),
   });
 
@@ -35,4 +39,14 @@ export async function runAgent(messages: ModelMessage[], deviceId: string) {
   }
 
   return result.text;
+}
+
+export function streamAgent(messages: ModelMessage[], deviceId: string) {
+  return streamText({
+    model: anthropic("claude-sonnet-5"),
+    system: SYSTEM_PROMPT,
+    messages,
+    tools: buildTools(deviceId),
+    stopWhen: stepCountIs(8),
+  });
 }

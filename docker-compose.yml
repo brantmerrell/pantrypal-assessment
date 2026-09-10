@@ -13,6 +13,6 @@ services:
     working_dir: /frontend
     volumes:
       - ./frontend:/frontend
-    command: npx --yes serve -l 3000
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
     ports:
       - "3000:3000"

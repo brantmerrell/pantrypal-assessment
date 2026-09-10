@@ -2,103 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>PantryPal</title>
-<style>
-  body { font-family: system-ui, sans-serif; max-width: 640px; margin: 40px auto; }
-  #log { border: 1px solid #ccc; border-radius: 8px; padding: 12px; height: 400px; overflow-y: auto; }
-  .msg { margin: 8px 0; }
-  .user { font-weight: 600; }
-  form { display: flex; gap: 8px; margin-top: 12px; }
-  input { flex: 1; padding: 8px; }
-  button { padding: 8px 16px; }
-</style>
 </head>
 <body>
-<h1>PantryPal</h1>
-<div id="log"></div>
-<form id="form">
-  <input id="input" autocomplete="off" placeholder="What do you want to cook?" />
-  <button type="submit">Send</button>
-</form>
-
-<script>
-const API_URL = ["localhost", "127.0.0.1"].includes(location.hostname)
-  ? "http://localhost:8000/chat"
-  : "https://pantrypal-api.jbm.eco/chat";
-const STORAGE_KEY = "pantrypal_history";
-const DEVICE_ID_KEY = "pantrypal_device_id";
-const log = document.getElementById("log");
-const form = document.getElementById("form");
-const input = document.getElementById("input");
-
-function loadDeviceId() {
-  try {
-    let id = localStorage.getItem(DEVICE_ID_KEY);
-    if (!id) {
-      id = crypto.randomUUID();
-      localStorage.setItem(DEVICE_ID_KEY, id);
-    }
-    return id;
-  } catch {
-    return "anonymous";
-  }
-}
-
-const deviceId = loadDeviceId();
-
-function loadHistory() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveHistory(history) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
-  } catch {
-    // localStorage unavailable (private mode, quota, etc.) — conversation just won't survive a refresh
-  }
-}
-
-let history = loadHistory();
-
-function addMessage(role, text) {
-  const div = document.createElement("div");
-  div.className = "msg " + role;
-  div.textContent = (role === "user" ? "You: " : "PantryPal: ") + text;
-  log.appendChild(div);
-  log.scrollTop = log.scrollHeight;
-}
-
-for (const msg of history) {
-  addMessage(msg.role, msg.content);
-}
-
-form.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const message = input.value.trim();
-  if (!message) return;
-  addMessage("user", message);
-  input.value = "";
-
-  try {
-    const res = await fetch(API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message, history, deviceId }),
-    });
-    const data = await res.json();
-    addMessage("assistant", data.reply ?? "(no reply)");
-    history.push({ role: "user", content: message });
-    history.push({ role: "assistant", content: data.reply });
-    saveHistory(history);
-  } catch (err) {
-    addMessage("assistant", "Error: " + err.message);
-  }
-});
-</script>
+<div id="root"></div>
+<script type="module" src="/src/main.tsx"></script>
 </body>
 </html>
