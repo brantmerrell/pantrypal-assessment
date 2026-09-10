@@ -35,19 +35,20 @@ function toolLabel(name: string): string {
 
 function ToolChip({ name, done }: { name: string; done: boolean }) {
   return (
-    <div className={`tool-chip ${done ? "done" : "pending"}`}>
-      <span className="tool-chip-icon">{done ? "✓" : "⋯"}</span>
-      {toolLabel(name)}
-    </div>
+    <span className={`tag ${done ? "is-success" : "is-warning"} tool-chip`}>
+      {done ? "✓" : "⋯"} {toolLabel(name)}
+    </span>
   );
 }
 
 function Message({ message }: { message: UIMessage }) {
   const isUser = message.role === "user";
   return (
-    <div className={`message ${isUser ? "user" : "assistant"}`}>
-      <div className="message-role">{isUser ? "You" : "PantryPal"}</div>
-      <div className="message-body">
+    <article className={`message ${isUser ? "is-primary" : ""}`}>
+      <div className="message-header">
+        <p>{isUser ? "You" : "PantryPal"}</p>
+      </div>
+      <div className="message-body content">
         {message.parts.map((part, i) => {
           if (part.type === "text") {
             return <span key={i}>{part.text}</span>;
@@ -75,7 +76,7 @@ function Message({ message }: { message: UIMessage }) {
           return null;
         })}
       </div>
-    </div>
+    </article>
   );
 }
 
@@ -106,46 +107,52 @@ export default function App() {
   }
 
   return (
-    <div className="app">
-      <header className="app-header">
-        <h1>PantryPal</h1>
-        <p className="tagline">Your cooking assistant — ask about recipes, substitutions, or what to make with what you've got.</p>
-      </header>
+    <section className="section">
+      <div className="container pantrypal-container">
+        <h1 className="title">PantryPal</h1>
+        <p className="subtitle is-6">
+          Your cooking assistant — ask about recipes, substitutions, or what to make with what you've got.
+        </p>
 
-      <div className="log" ref={logRef}>
-        {messages.length === 0 && (
-          <div className="empty-hint">
-            Try: "What can I make with chicken thighs and rice?" or "I only have a hot plate, no oven — got a roast chicken idea?"
+        <div className="box chat-log" ref={logRef}>
+          {messages.length === 0 && (
+            <div className="notification">
+              Try: "What can I make with chicken thighs and rice?" or "I only have a hot plate, no oven — got a
+              roast chicken idea?"
+            </div>
+          )}
+          {messages.map((m) => (
+            <Message key={m.id} message={m} />
+          ))}
+          {status === "submitted" && (
+            <article className="message">
+              <div className="message-header">
+                <p>PantryPal</p>
+              </div>
+              <div className="message-body is-italic">thinking…</div>
+            </article>
+          )}
+          {error && <div className="notification is-danger">Something went wrong: {error.message}</div>}
+        </div>
+
+        <form className="field has-addons" onSubmit={handleSubmit}>
+          <div className="control is-expanded">
+            <input
+              className="input"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="What do you want to cook?"
+              autoComplete="off"
+              disabled={busy}
+            />
           </div>
-        )}
-        {messages.map((m) => (
-          <Message key={m.id} message={m} />
-        ))}
-        {status === "submitted" && (
-          <div className="message assistant">
-            <div className="message-role">PantryPal</div>
-            <div className="message-body pending-text">thinking…</div>
+          <div className="control">
+            <button className={`button is-primary ${busy ? "is-loading" : ""}`} type="submit" disabled={busy || !input.trim()}>
+              Send
+            </button>
           </div>
-        )}
-        {error && (
-          <div className="error-banner">
-            Something went wrong: {error.message}
-          </div>
-        )}
+        </form>
       </div>
-
-      <form className="composer" onSubmit={handleSubmit}>
-        <input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="What do you want to cook?"
-          autoComplete="off"
-          disabled={busy}
-        />
-        <button type="submit" disabled={busy || !input.trim()}>
-          Send
-        </button>
-      </form>
-    </div>
+    </section>
   );
 }
